@@ -1,0 +1,10 @@
+using MiniPharmacie.Business.Services;
+using MiniPharmacie.Data.Database;
+
+namespace MiniPharmacie.App.Forms;
+
+public sealed class SettingsForm: PharmacyForm
+{
+    private readonly long actor;private readonly PharmacySettingsService settings=new(new DatabaseInitializer());private readonly Dictionary<string,TextBox> fields=new();
+    public SettingsForm(long userId){actor=userId;Text="Paramètres de la pharmacie";Width=600;Height=570;StartPosition=FormStartPosition.CenterParent;var panel=new Panel{Dock=DockStyle.Fill,AutoScroll=true};Controls.Add(panel);var names=new[]{("Name","Nom de la pharmacie"),("Address","Adresse"),("Phone","Téléphone"),("Email","Courriel"),("LogoPath","Chemin du logo"),("Currency","Devise (code)"),("PrinterName","Imprimante"),("ExpiryAlertDays","Délai d'alerte péremption (jours)"),("BackupTime","Sauvegarde quotidienne (HH:mm)"),("BackupDirectory","Dossier de sauvegarde"),("PriceDecimals","Décimales de prix"),("TaxesEnabled","Taxes activées (0 ou 1, après validation réglementaire)")};var y=15;foreach(var(item,label) in names){panel.Controls.Add(new Label{Text=label,Left=18,Top=y+4,Width=230});var box=new TextBox{Left=255,Top=y,Width=300};fields[item]=box;panel.Controls.Add(box);y+=38;}var browse=new Button{Text="Choisir le dossier…",Left=255,Top=y,Width=150};browse.Click+=(_,_)=>{using var d=new FolderBrowserDialog();if(d.ShowDialog()==DialogResult.OK)fields["BackupDirectory"].Text=d.SelectedPath;};panel.Controls.Add(browse);y+=40;var save=new Button{Text="Enregistrer",Left=420,Top=y,Width=135};save.Click+=async(_,_)=>{try{await settings.SaveAsync(actor,fields.ToDictionary(x=>x.Key,x=>x.Value.Text));MessageBox.Show("Paramètres enregistrés.");Close();}catch(Exception ex){MessageBox.Show(ex.Message,"Paramètres non enregistrés",MessageBoxButtons.OK,MessageBoxIcon.Warning);}};panel.Controls.Add(save);Shown+=async(_,_)=>{try{var values=await settings.GetAsync();foreach(var kv in fields)if(values.TryGetValue(kv.Key,out var value))kv.Value.Text=value;}catch(Exception ex){MessageBox.Show(ex.Message);Close();}};}
+}

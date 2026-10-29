@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="MiniPharmacie.App/MiniPharmacie.App.csproj" />
+  <Project Path="MiniPharmacie.Business/MiniPharmacie.Business.csproj" />
+  <Project Path="MiniPharmacie.Data/MiniPharmacie.Data.csproj" />
+  <Project Path="MiniPharmacie.Tests/MiniPharmacie.Tests.csproj" />
+</Solution>

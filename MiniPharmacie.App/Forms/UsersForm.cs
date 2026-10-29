@@ -1,0 +1,12 @@
+using MiniPharmacie.Business.Services;
+using MiniPharmacie.Data.Database;
+
+namespace MiniPharmacie.App.Forms;
+
+public sealed class UsersForm: PharmacyForm
+{
+    private readonly long actorId;private readonly SecurityAdministrationService service=new(new DatabaseInitializer());private readonly DataGridView grid=new(){Dock=DockStyle.Fill,ReadOnly=true,AutoGenerateColumns=true,SelectionMode=DataGridViewSelectionMode.FullRowSelect};
+    public UsersForm(long userId){actorId=userId;Text="Gestion des utilisateurs";Width=760;Height=520;var bar=new FlowLayoutPanel{Dock=DockStyle.Top,Height=54};var add=new Button{Text="Créer un compte",AutoSize=true};var deactivate=new Button{Text="Désactiver le compte sélectionné",AutoSize=true};bar.Controls.AddRange([add,deactivate]);Controls.Add(grid);Controls.Add(bar);Shown+=async(_,_)=>await Reload();add.Click+=async(_,_)=>await CreateUser();deactivate.Click+=async(_,_)=>{if(grid.CurrentRow is { } row&&long.TryParse(Convert.ToString(row.Cells["Id"].Value),out var id)&&MessageBox.Show($"Désactiver {Convert.ToString(row.Cells["Username"].Value)} ?","Confirmation",MessageBoxButtons.YesNo)==DialogResult.Yes)try{await service.DeactivateUserAsync(actorId,id);await Reload();}catch(Exception ex){MessageBox.Show(ex.Message,"Opération refusée");}};}
+    private async Task Reload(){try{grid.DataSource=(await service.ListUsersAsync(actorId)).Select(x=>new{x.Id,x.Username,x.Role,x.Active}).ToList();}catch(Exception ex){MessageBox.Show(ex.Message,"Accès refusé");Close();}}
+    private async Task CreateUser(){using var f=new PharmacyForm{Text="Nouveau compte",Width=400,Height=290,StartPosition=FormStartPosition.CenterParent};var username=new TextBox{Left=145,Top=25,Width=200};var password=new TextBox{Left=145,Top=65,Width=200,UseSystemPasswordChar=true};var role=new ComboBox{Left=145,Top=105,Width=200,DropDownStyle=ComboBoxStyle.DropDownList};role.Items.AddRange(["Vendeur","Responsable"]);role.SelectedIndex=0;var save=new Button{Text="Créer",Left=270,Top=160,DialogResult=DialogResult.OK};f.Controls.AddRange([new Label{Text="Identifiant",Left=20,Top=28},username,new Label{Text="Mot de passe (12 caractères min.)",Left=20,Top=68,Width=120},password,new Label{Text="Rôle",Left=20,Top=108},role,save]);if(f.ShowDialog(this)!=DialogResult.OK)return;try{await service.CreateUserAsync(actorId,username.Text,password.Text,role.SelectedItem!.ToString()!);await Reload();}catch(Exception ex){MessageBox.Show(ex.Message,"Compte non créé",MessageBoxButtons.OK,MessageBoxIcon.Warning);}}
+}
